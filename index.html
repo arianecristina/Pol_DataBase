@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Banco de Dados de Estrelas</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    h1 { color: #2c3e50; }
+    .star { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    button { background: #3498db; color: white; border: none; padding: 8px 15px; cursor: pointer; }
+    input, textarea { width: 100%; padding: 8px; margin: 5px 0 15px; }
+  </style>
+</head>
+<body>
+  <h1>🌟 Banco de Dados de Estrelas</h1>
+  
+  <h2>Adicionar Nova Estrela</h2>
+  <form id="starForm">
+    <input type="text" id="starName" placeholder="Nome da Estrela (ex: Sirius)" required>
+    <input type="number" id="starMagnitude" placeholder="Magnitude (ex: -1.46)" step="0.01" required>
+    <input type="text" id="starConstellation" placeholder="Constelação (ex: Canis Major)" required>
+    <textarea id="starNotes" placeholder="Observações (ex: Visível a olho nu)"></textarea>
+    <button type="submit">Salvar Estrela</button>
+  </form>
+  
+  <h2>Estrelas Cadastradas</h2>
+  <div id="starList"></div>
+
+  <!-- Firebase (código que conecta ao banco de dados) -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  
+  <script>
+    // Configuração do Firebase (substitua com os dados do SEU projeto)
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_PROJETO.firebaseapp.com",
+      projectId: "SEU_PROJETO",
+      storageBucket: "SEU_PROJETO.appspot.com",
+      messagingSenderId: "SEU_SENDER_ID",
+      appId: "SEU_APP_ID"
+    };
+
+    // Inicializa o Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Salvar estrela no banco de dados
+    document.getElementById("starForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      
+      const starName = document.getElementById("starName").value;
+      const starMagnitude = parseFloat(document.getElementById("starMagnitude").value);
+      const starConstellation = document.getElementById("starConstellation").value;
+      const starNotes = document.getElementById("starNotes").value;
+      
+      db.collection("stars").add({
+        name: starName,
+        magnitude: starMagnitude,
+        constellation: starConstellation,
+        notes: starNotes,
+        date: new Date().toISOString()
+      }).then(() => {
+        alert("Estrela salva com sucesso!");
+        document.getElementById("starForm").reset();
+        loadStars(); // Recarrega a lista
+      }).catch(error => {
+        alert("Erro ao salvar: " + error);
+      });
+    });
+
+    // Carrega e exibe as estrelas
+    function loadStars() {
+      db.collection("stars").orderBy("date", "desc").get().then((querySnapshot) => {
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          html += `
+            <div class="star">
+              <h3>${data.name}</h3>
+              <p><strong>Constelação:</strong> ${data.constellation}</p>
+              <p><strong>Magnitude:</strong> ${data.magnitude}</p>
+              <p><strong>Observações:</strong> ${data.notes || "Nenhuma"}</p>
+            </div>
+          `;
+        });
+        document.getElementById("starList").innerHTML = html;
+      });
+    }
+
+    // Carrega as estrelas quando a página abre
+    window.onload = loadStars;
+  </script>
+</body>
+</html>
